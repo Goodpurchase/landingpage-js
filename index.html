@@ -3,57 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Remote Controlled Landing Page</title>
+  <title>Homizlo Clone Page</title>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
+    * {margin: 0; padding: 0; box-sizing: border-box;}
+    html, body {
       height: 100%;
       overflow: hidden;
       font-family: Arial, sans-serif;
     }
     .hero {
-      position: relative;
-      width: 100%;
+      width: 100vw;
       height: 100vh;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-size: contain;
-      background-position: center;
+      position: relative;
     }
     .redirect-btn {
       position: absolute;
-      bottom: 60px;
-      text-align: center;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
     }
     .redirect-btn img {
-      width: 180px;
+      max-width: 280px;
+      width: 90%;
+      height: auto;
       cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .redirect-btn img:hover {
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
   <div class="hero" id="hero">
-    <a id="redirectLink" href="#" target="_blank">
-      <img id="tekan" src="" alt="Click Button">
-    </a>
+    <div class="redirect-btn">
+      <a id="redirectLink" href="#" target="_blank">
+        <img id="tekan" src="" alt="Click Button">
+      </a>
+    </div>
   </div>
 
   <script>
     fetch("https://script.google.com/macros/s/AKfycbxU2KFuJHHkMUcl21lSEcKeQBJe0ofihox4Ui6OtHl_71MWCdMdczE_p_mCEvt6hzce/exec")
       .then(res => res.json())
       .then(data => {
-        // 背景图
+        // 设置背景图
         document.getElementById("hero").style.backgroundImage = `url(${data.background_image})`;
 
-        // 按钮图
+        // 设置按钮图
         document.getElementById("tekan").src = data.button_image;
 
-        // 跳转链接
+        // 设置跳转链接
         document.getElementById("redirectLink").href = data.redirect_url;
 
-        // Facebook Pixel
+        // 设置 Facebook Pixel
         const pixelScript = document.createElement('script');
         pixelScript.innerHTML = `
           !function(f,b,e,v,n,t,s)
