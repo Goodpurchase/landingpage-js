@@ -59,35 +59,77 @@
     </div>
   </div>
 
-  <script>
-    fetch("https://script.google.com/macros/s/AKfycbxU2KFuJHHkMUcl21lSEcKeQBJe0ofihox4Ui6OtHl_71MWCdMdczE_p_mCEvt6hzce/exec")
-      .then(res => res.json())
-      .then(data => {
-        // 设置背景图
-        document.getElementById("hero").style.backgroundImage = `url(${data.background_image})`;
+<script>
+  const API = "https://script.google.com/macros/s/AKfycbxU2KFuJHHkMUcl21lSEcKeQBJe0ofihox4Ui6OtHl_71MWCdMdczE_p_mCEvt6hzce/exec";
 
-        // 设置按钮图
-        document.getElementById("tekan").src = data.button_image;
+  // ✅ 默认占位（避免首屏黑 + alt 文本）
+  const FALLBACK_BG  = "https://static.gwvkyk.com/media/5a90f42fbfc864b86036a.png";   // 可用你自己的“安全背景”
+  const FALLBACK_BTN = "https://static.gwvkyk.com/media/2c7d9cd9bfc861a5114e5.png";  // 可用你自己的“安全按钮”
+  const FALLBACK_URL = "#";
 
-        // 设置跳转链接
-        document.getElementById("redirectLink").href = data.redirect_url;
+  const hero   = document.getElementById("hero");
+  const link   = document.getElementById("redirectLink");
+  const btnImg = document.getElementById("tekan");
 
-        // 设置 Facebook Pixel
-        const pixelScript = document.createElement('script');
-        pixelScript.innerHTML = `
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${data.fb_pixel_id}');
-          fbq('track', 'PageView');
-        `;
-        document.head.appendChild(pixelScript);
-      });
-  </script>
+  // 先用占位，确保首屏不空
+  hero.style.backgroundImage = `url(${FALLBACK_BG})`;
+  link.href = FALLBACK_URL;
+
+  // 一个小工具：加载图片成功后再显示，避免闪烁/alt 文本
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload  = () => resolve(src);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // 给 fetch 加超时兜底（3 秒）
+  function withTimeout(p, ms = 3000) {
+    return Promise.race([
+      p,
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))
+    ]);
+  }
+
+  // 开始获取远程配置
+  withTimeout(fetch(API, { cache: "no-store" }).then(r => r.json()))
+    .then(async data => {
+      // 确保是直接图片链接（以 .jpg/.png/.webp 结尾；不要用 Google Drive 页面链接）
+      const bg  = data.background_image || FALLBACK_BG;
+      const btn = data.button_image     || FALLBACK_BTN;
+      const url = data.redirect_url     || FALLBACK_URL;
+
+      // 先加载图片，成功再替换到页面（避免黑屏/断图）
+      await loadImage(bg);
+      hero.style.backgroundImage = `url(${bg})`;
+
+      await loadImage(btn);
+      btnImg.src = btn;
+      btnImg.classList.add("ready");   // ✅ 淡入按钮
+
+      link.href = url;
+
+      // （可选）像之前一样动态挂 Facebook Pixel
+      if (data.fb_pixel_id) {
+        const s = document.createElement("script");
+        s.innerHTML = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;
+        n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+        s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+        (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init','${data.fb_pixel_id}'); fbq('track','PageView');`;
+        document.head.appendChild(s);
+      }
+    })
+    .catch(async () => {
+      // ❗ 失败/超时：用兜底素材，保证不黑屏
+      await loadImage(FALLBACK_BTN);
+      btnImg.src = FALLBACK_BTN;
+      btnImg.classList.add("ready");
+      link.href = FALLBACK_URL;
+    });
+</script>
 </body>
 </html>
